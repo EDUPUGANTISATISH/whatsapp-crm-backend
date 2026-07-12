@@ -1,35 +1,47 @@
 import express from "express";
 
 import {
-  receiveWhatsAppWebhook,
-  sendTemplateMessage,
-  sendTextMessage,
-} from "../controllers/messageController.js";
+  receiveWebhook,
+  verifyWebhook,
+} from "../controllers/webhookController.js";
 
-import { whatsappConfig } from "../config/whatsapp.js";
+import {
+  sendTemplateMessage,
+} from "../controllers/messageController.js";
 
 const router = express.Router();
 
-router.post("/send-message", sendTextMessage);
+/*
+|--------------------------------------------------------------------------
+| WhatsApp Webhook Verification
+|--------------------------------------------------------------------------
+| Meta verifies the Render webhook URL using this GET request.
+|
+| Final URL:
+| GET /api/whatsapp/webhook
+*/
+router.get("/webhook", verifyWebhook);
 
+/*
+|--------------------------------------------------------------------------
+| Receive Incoming WhatsApp Messages
+|--------------------------------------------------------------------------
+| Meta sends customer messages and status updates to this POST route.
+|
+| Final URL:
+| POST /api/whatsapp/webhook
+*/
+router.post("/webhook", receiveWebhook);
+
+/*
+|--------------------------------------------------------------------------
+| Send WhatsApp Template Message
+|--------------------------------------------------------------------------
+| Your React app or Thunder Client uses this route to send templates.
+|
+| Final URL:
+| POST /api/whatsapp/send-template
+*/
 router.post("/send-template", sendTemplateMessage);
-
-router.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  if (mode === "subscribe" && token === whatsappConfig.verifyToken) {
-    console.log("WhatsApp webhook verification successful.");
-
-    return res.status(200).send(challenge);
-  }
-
-  console.warn("WhatsApp webhook verification failed.");
-
-  return res.sendStatus(403);
-});
-
-router.post("/webhook", receiveWhatsAppWebhook);
 
 export default router;
