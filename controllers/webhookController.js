@@ -1,4 +1,8 @@
-import { admin, db } from "../config/firebaseAdmin.js";
+import {
+  db,
+  FieldValue,
+  Timestamp,
+} from "../config/firebaseAdmin.js";
 
 /**
  * Meta calls this GET route when verifying the webhook.
@@ -115,9 +119,8 @@ const saveIncomingMessage = async ({
   const timestampSeconds = Number(message.timestamp);
 
   const whatsappCreatedAt = Number.isFinite(timestampSeconds)
-    ? admin.firestore.Timestamp.fromMillis(timestampSeconds * 1000)
-    : admin.firestore.FieldValue.serverTimestamp();
-
+    ? Timestamp.fromMillis(timestampSeconds * 1000)
+    : FieldValue.serverTimestamp();
   const messageData = {
     whatsappMessageId,
     direction: "incoming",
@@ -131,8 +134,8 @@ const saveIncomingMessage = async ({
     phoneNumberId: metadata.phone_number_id || "",
 
     whatsappCreatedAt,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
 
     isRead: false,
   };
@@ -176,7 +179,7 @@ const updateMessageStatus = async (statusData) => {
 
   await document.ref.update({
     status: newStatus,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
 
   console.log("WhatsApp message status updated:", {

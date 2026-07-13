@@ -1,12 +1,22 @@
-import admin from "firebase-admin";
+import {
+  cert,
+  getApps,
+  initializeApp,
+} from "firebase-admin/app";
 
-const requiredVariables = [
+import {
+  FieldValue,
+  getFirestore,
+  Timestamp,
+} from "firebase-admin/firestore";
+
+const requiredEnvironmentVariables = [
   "FIREBASE_PROJECT_ID",
   "FIREBASE_CLIENT_EMAIL",
   "FIREBASE_PRIVATE_KEY",
 ];
 
-for (const variableName of requiredVariables) {
+for (const variableName of requiredEnvironmentVariables) {
   if (!process.env[variableName]) {
     console.warn(
       `Warning: ${variableName} is missing from the environment variables.`
@@ -14,18 +24,34 @@ for (const variableName of requiredVariables) {
   }
 }
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+const projectId = process.env.FIREBASE_PROJECT_ID;
+const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(
+  /\\n/g,
+  "\n"
+);
 
-      // Render stores \n as text. Convert it back into real line breaks.
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
+if (!projectId || !clientEmail || !privateKey) {
+  throw new Error(
+    "Firebase credentials are incomplete. Check Render environment variables."
+  );
 }
 
-const db = admin.firestore();
+const firebaseApp =
+  getApps().length > 0
+    ? getApps()[0]
+    : initializeApp({
+      credential: cert({
+        projectId,
+        clientEmail,
+        privateKey,
+      }),
+    });
 
-export { admin, db };
+const db = getFirestore(firebaseApp);
+
+export {
+  db,
+  FieldValue,
+  Timestamp,
+};
