@@ -12,10 +12,27 @@ const whatsappApi = axios.create({
   },
 });
 
+// Normalize phone number
 export const normalizePhoneNumber = (phone) => {
-  return String(phone || "").replace(/\D/g, "");
+  let normalizedPhone = String(phone || "").replace(/\D/g, "");
+
+  // Remove leading zero
+  if (normalizedPhone.startsWith("0")) {
+    normalizedPhone = normalizedPhone.substring(1);
+  }
+
+  // Add India country code if missing
+  if (
+    normalizedPhone.length === 10 &&
+    !normalizedPhone.startsWith("91")
+  ) {
+    normalizedPhone = `91${normalizedPhone}`;
+  }
+
+  return normalizedPhone;
 };
 
+// Send text message
 export const sendWhatsAppTextMessage = async (phone, message) => {
   const normalizedPhone = normalizePhoneNumber(phone);
   const normalizedMessage = String(message || "").trim();
@@ -28,6 +45,10 @@ export const sendWhatsAppTextMessage = async (phone, message) => {
     throw new Error("Message cannot be empty.");
   }
 
+  console.log("Sending WhatsApp message");
+  console.log("Phone:", normalizedPhone);
+  console.log("Message:", normalizedMessage);
+
   const response = await whatsappApi.post(getMessagesApiUrl(), {
     messaging_product: "whatsapp",
     recipient_type: "individual",
@@ -39,9 +60,12 @@ export const sendWhatsAppTextMessage = async (phone, message) => {
     },
   });
 
+  console.log("WhatsApp API Response:", response.data);
+
   return response.data;
 };
 
+// Send template message
 export const sendWhatsAppTemplateMessage = async ({
   phone,
   templateName = "hello_world",
@@ -52,6 +76,10 @@ export const sendWhatsAppTemplateMessage = async ({
   if (!normalizedPhone) {
     throw new Error("A valid phone number is required.");
   }
+
+  console.log("Sending Template Message");
+  console.log("Phone:", normalizedPhone);
+  console.log("Template:", templateName);
 
   const response = await whatsappApi.post(getMessagesApiUrl(), {
     messaging_product: "whatsapp",
@@ -65,6 +93,8 @@ export const sendWhatsAppTemplateMessage = async ({
       },
     },
   });
+
+  console.log("WhatsApp Template Response:", response.data);
 
   return response.data;
 };
